@@ -6,9 +6,11 @@
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "strict": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node", "express"]
   },
-  "include": ["src/**/*"], // Ensure all source files are included
+  "include": ["src/**/*"], // Only include files under src/
   "exclude": ["node_modules"] // Exclude node_modules
 }

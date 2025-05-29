@@ -1,19 +1,39 @@
-// Example CustomerService for fetching customers and their onboarding status
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import { Customer } from '../models/Customer';
 
-type Customer = {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  // ...other fields...
-};
+dotenv.config();
 
-const customers: Customer[] = [
-  { id: '1', name: 'Alice RT', email: 'alice@example.com', status: 'rt_new' },
-  { id: '2', name: 'Bob RT', email: 'bob@example.com', status: 'rt_in_progress' },
-  { id: '3', name: 'Carol RT', email: 'carol@example.com', status: 'rt_completed' },
-];
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 
-export function getAllCustomers(): Customer[] {
-  return customers;
+if (!supabaseUrl) throw new Error('SUPABASE_URL is required.');
+if (!supabaseServiceKey) throw new Error('SUPABASE_SERVICE_KEY is required.');
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  // Use left join and select wallets.id as walletId directly
+  const { data, error } = await supabase
+    .from('customers')
+    .select('id, name, email, status, created_at, wallets(id)')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Map walletId to top-level property for each customer
+  return data.map((customer: any) => {
+    const walletId: string | null =
+      Array.isArray(customer.wallets) && customer.wallets.length > 0
+        ? customer.wallets[0].id
+        : null;
+    return {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      status: customer.status,
+      walletId,
+      // ...other fields if needed...
+    } as Customer;
+  });
 }

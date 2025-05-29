@@ -15,10 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const MoovAdapter_1 = require("./adapters/MoovAdapter");
 const cors_1 = __importDefault(require("cors"));
 const customers_1 = __importDefault(require("./routes/customers"));
-dotenv_1.default.config();
+const wallets_1 = __importDefault(require("./routes/wallets"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 const port = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use(body_parser_1.default.json());
 console.log('Base Path:', process.env.MOOV_BASE_PATH);
 console.log('Client ID:', process.env.MOOV_CLIENT_ID);
 console.log('Current directory:', __dirname);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 try {
     console.log('MoovAdapter path:', require.resolve('./adapters/MoovAdapter'));
 }
@@ -40,40 +42,17 @@ catch (error) {
     }
 }
 // Routes
-// Create a Wallet
-app.post('/wallets', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId } = req.body;
-    try {
-        const wallet = yield moovAdapter.createWallet(userId);
-        res.status(201).json(wallet);
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to create wallet' });
-    }
-}));
 // Transfer Funds
 app.post('/transfers', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { fromWallet, toWallet, amount } = req.body;
     try {
+        // If MoovAdapter does not have getWalletById, use wallet IDs directly
         const transaction = yield moovAdapter.transferFunds(fromWallet, toWallet, amount);
         res.status(201).json(transaction);
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to transfer funds' });
-    }
-}));
-// Get Wallet Balance
-app.get('/wallets/:walletId/balance', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { walletId } = req.params;
-    try {
-        const balance = yield moovAdapter.getBalance(walletId);
-        res.status(200).json({ balance });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to get wallet balance' });
     }
 }));
 // Withdraw to Bank
@@ -102,7 +81,12 @@ app.post('/businesses', (req, res) => __awaiter(void 0, void 0, void 0, function
 }));
 // Customers routes
 app.use('/customers', customers_1.default);
-// Start the Server
+// Wallets routes
+app.use('/wallets', wallets_1.default);
+// Supabase credentials
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+// At the end, only start the server:
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });

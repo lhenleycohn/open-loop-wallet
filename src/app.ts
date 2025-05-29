@@ -1,11 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+dotenv.config();
 import { MoovAdapter } from './adapters/MoovAdapter';
 import cors from 'cors';
 import customersRouter from './routes/customers';
-
-dotenv.config();
+import walletsRouter from './routes/wallets';
 
 const app = express();
 
@@ -20,6 +20,7 @@ app.use(bodyParser.json());
 console.log('Base Path:', process.env.MOOV_BASE_PATH);
 console.log('Client ID:', process.env.MOOV_CLIENT_ID);
 console.log('Current directory:', __dirname);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 try {
   console.log('MoovAdapter path:', require.resolve('./adapters/MoovAdapter'));
@@ -33,39 +34,16 @@ try {
 
 // Routes
 
-// Create a Wallet
-app.post('/wallets', async (req, res) => {
-  const { userId } = req.body;
-  try {
-    const wallet = await moovAdapter.createWallet(userId);
-    res.status(201).json(wallet);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create wallet' });
-  }
-});
-
 // Transfer Funds
 app.post('/transfers', async (req, res) => {
   const { fromWallet, toWallet, amount } = req.body;
   try {
+    // If MoovAdapter does not have getWalletById, use wallet IDs directly
     const transaction = await moovAdapter.transferFunds(fromWallet, toWallet, amount);
     res.status(201).json(transaction);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to transfer funds' });
-  }
-});
-
-// Get Wallet Balance
-app.get('/wallets/:walletId/balance', async (req, res) => {
-  const { walletId } = req.params;
-  try {
-    const balance = await moovAdapter.getBalance(walletId);
-    res.status(200).json({ balance });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to get wallet balance' });
   }
 });
 
@@ -96,7 +74,14 @@ app.post('/businesses', async (req, res) => {
 // Customers routes
 app.use('/customers', customersRouter);
 
-// Start the Server
+// Wallets routes
+app.use('/wallets', walletsRouter);
+
+// Supabase credentials
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+
+// At the end, only start the server:
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

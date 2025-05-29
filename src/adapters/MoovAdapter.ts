@@ -1,9 +1,36 @@
-import { PaymentProvider } from '../services';
-import { Wallet, Transaction } from '../models';
+import { PaymentProvider } from '../services/PaymentProvider';
+import { Wallet } from '../models/Wallet';
+import { Transaction } from '../models/Transaction';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export class MoovAdapter implements PaymentProvider {
   async createWallet(userId: string): Promise<Wallet> {
-    return { id: 'wallet-123', userId, balance: 0 };
+    if (!userId) {
+      throw new Error('userId is required to create a wallet');
+    }
+    const walletId = 'wallet-' + Math.random().toString(36).substr(2, 9);
+    const insertPayload = { id: walletId, customer_id: userId, balance: 0 };
+    console.log('Attempting to insert wallet:', insertPayload);
+    const { data, error } = await supabase
+      .from('wallets')
+      .insert([insertPayload])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase wallet insert error:', error, 'Payload:', insertPayload);
+      throw new Error(`Failed to create wallet: ${error.message}`);
+    }
+
+    console.log('Wallet created in DB:', data);
+    return { id: data.id, userId: data.customer_id, balance: data.balance };
   }
 
   async transferFunds(from: Wallet, to: Wallet, amount: number): Promise<Transaction> {
@@ -54,5 +81,15 @@ export class MoovAdapter implements PaymentProvider {
   async createCustomer(customerName: string, email: string): Promise<{ id: string; name: string; email: string }> {
     // Placeholder logic for creating a customer
     return { id: 'customer-456', name: customerName, email };
+  }
+
+  async getWalletsForCustomer(userId: string) {
+    const { data, error } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('customer_id', userId);
+
+    if (error) throw new Error(error.message);
+    return data;
   }
 }

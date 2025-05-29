@@ -4,7 +4,6 @@ export interface Transaction {
     fromWallet: string;
     toWallet: string;
     amount: number;
-    status: "pending" | "settled" | "failed";
-    providerTxId?: string;
+    status: string;
+    // ...other fields as needed...
   }
-  

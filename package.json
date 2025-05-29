@@ -8,7 +8,7 @@
     "build": "tsc",
     "clean": "rimraf dist",
     "rebuild": "npm run clean && npm run build",
-    "start": "node dist/app.js"
+    "start": "NODE_ENV=production npm start"
   },
   "repository": {
     "type": "git",
@@ -36,6 +36,7 @@
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "@supabase/supabase-js": "^2.39.7"
   }
 }

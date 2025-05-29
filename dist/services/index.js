@@ -16,5 +16,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./PaymentService"), exports);
 __exportStar(require("./PaymentProvider"), exports);
+// CustomerService currently returns mock (RT) data for demonstration
 __exportStar(require("./CustomerService"), exports);
 //# sourceMappingURL=index.js.map
